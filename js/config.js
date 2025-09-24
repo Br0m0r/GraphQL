@@ -5,7 +5,11 @@ const CONFIG = {
     AUTH_API_URL: 'https://platform.zone01.gr/api/auth/signin',
     GRAPHQL_API_URL: 'https://platform.zone01.gr/api/graphql-engine/v1/graphql',
     APP_NAME: 'GraphQL Profile Page',
-    VERSION: '1.0.0'
+    VERSION: '1.0.0',
+    // CORS proxy for development/testing (not for production)
+    // Set USE_CORS_PROXY to false when deploying to production with proper CORS setup
+    USE_CORS_PROXY: true,
+    CORS_PROXY: 'https://corsproxy.io/?'
 };
 
 // Utility functions used across multiple files

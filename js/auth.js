@@ -1,7 +1,13 @@
 // auth.js - Authentication handling
 
-// Get API Configuration
-const getAuthApiUrl = () => window.CONFIG?.AUTH_API_URL || 'https://((DOMAIN))/api/auth/signin';
+// Get API Configuration with CORS proxy support
+const getAuthApiUrl = () => {
+    const baseUrl = window.CONFIG?.AUTH_API_URL || 'https://platform.zone01.gr/api/auth/signin';
+    if (window.CONFIG?.USE_CORS_PROXY && window.CONFIG?.CORS_PROXY) {
+        return window.CONFIG.CORS_PROXY + encodeURIComponent(baseUrl);
+    }
+    return baseUrl;
+};
 
 // Utility function to encode credentials in base64
 function encodeCredentials(username, password) {
