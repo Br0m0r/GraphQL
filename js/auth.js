@@ -51,6 +51,7 @@ async function login(username, password) {
 
         if (response.ok) {
             const data = await response.json();
+            console.log('Login response:', data);
             if (data.token || data.jwt || data.access_token) {
                 // Store the token (different APIs might return different field names)
                 const token = data.token || data.jwt || data.access_token;
