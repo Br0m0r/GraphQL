@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - GraphQL Profile</title>
+</head>
+<body>
+    <h1>JavaScript Dependencies & API Test</h1>
+    
+    <div id="test-results"></div>
+    
+    <h2>API Endpoint Testing</h2>
+    <div id="api-test-section">
+        <div>
+            <label for="test-username">Username/Email:</label>
+            <input type="text" id="test-username" placeholder="Enter username or email">
+        </div>
+        <div>
+            <label for="test-password">Password:</label>
+            <input type="password" id="test-password" placeholder="Enter password">
+        </div>
+        <button id="test-login-btn">Test Login & GraphQL APIs</button>
+        <button id="test-endpoints-only">Test Endpoint Connectivity Only</button>
+    </div>
+    
+    <div id="api-results"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/graphql.js"></script>
+    <script src="js/graphs.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const results = [];
+            
+            // Test config loading
+            results.push(`CONFIG loaded: ${typeof window.CONFIG === 'object' ? '✓' : '✗'}`);
+            results.push(`UTILS loaded: ${typeof window.UTILS === 'object' ? '✓' : '✗'}`);
+            
+            // Test utility functions
+            results.push(`formatNumber function: ${typeof formatNumber === 'function' ? '✓' : '✗'}`);
+            results.push(`formatDate function: ${typeof formatDate === 'function' ? '✓' : '✗'}`);
+            results.push(`calculateTotalXP function: ${typeof calculateTotalXP === 'function' ? '✓' : '✗'}`);
+            results.push(`calculatePassFailRatio function: ${typeof calculatePassFailRatio === 'function' ? '✓' : '✗'}`);
+            results.push(`groupTransactionsByDate function: ${typeof groupTransactionsByDate === 'function' ? '✓' : '✗'}`);
+            
+            // Test auth functions
+            results.push(`getToken function: ${typeof getToken === 'function' ? '✓' : '✗'}`);
+            results.push(`isAuthenticated function: ${typeof isAuthenticated === 'function' ? '✓' : '✗'}`);
+            results.push(`login function: ${typeof login === 'function' ? '✓' : '✗'}`);
+            
+            // Test GraphQL functions
+            results.push(`executeGraphQLQuery function: ${typeof executeGraphQLQuery === 'function' ? '✓' : '✗'}`);
+            results.push(`getUserBasicInfo function: ${typeof getUserBasicInfo === 'function' ? '✓' : '✗'}`);
+            results.push(`getUserXPTransactions function: ${typeof getUserXPTransactions === 'function' ? '✓' : '✗'}`);
+            results.push(`getUserResults function: ${typeof getUserResults === 'function' ? '✓' : '✗'}`);
+            
+            // Test graph functions
+            results.push(`createXPLineChart function: ${typeof createXPLineChart === 'function' ? '✓' : '✗'}`);
+            results.push(`createSuccessPieChart function: ${typeof createSuccessPieChart === 'function' ? '✓' : '✗'}`);
+            
+            document.getElementById('test-results').innerHTML = '<pre>' + results.join('\n') + '</pre>';
+            
+            // API Testing functionality
+            setupAPITests();
+        });
+        
+        function setupAPITests() {
+            const apiResults = document.getElementById('api-results');
+            
+            // Test endpoint connectivity only
+            document.getElementById('test-endpoints-only').addEventListener('click', async () => {
+                apiResults.innerHTML = '<p>Testing endpoint connectivity...</p>';
+                
+                const endpointTests = [];
+                
+                // Test auth endpoint
+                try {
+                    const authResponse = await fetch(window.CONFIG.AUTH_API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Basic dGVzdDp0ZXN0', // test:test in base64
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    endpointTests.push(`Auth endpoint (${window.CONFIG.AUTH_API_URL}): ${authResponse.status} ${authResponse.statusText}`);
+                } catch (error) {
+                    endpointTests.push(`Auth endpoint: ✗ ${error.message}`);
+                }
+                
+                // Test GraphQL endpoint
+                try {
+                    const gqlResponse = await fetch(window.CONFIG.GRAPHQL_API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer test-token'
+                        },
+                        body: JSON.stringify({
+                            query: '{ __typename }'
+                        })
+                    });
+                    endpointTests.push(`GraphQL endpoint (${window.CONFIG.GRAPHQL_API_URL}): ${gqlResponse.status} ${gqlResponse.statusText}`);
+                } catch (error) {
+                    endpointTests.push(`GraphQL endpoint: ✗ ${error.message}`);
+                }
+                
+                apiResults.innerHTML = '<h3>Endpoint Connectivity Results:</h3><pre>' + endpointTests.join('\n') + '</pre>';
+            });
+            
+            // Test full login and GraphQL flow
+            document.getElementById('test-login-btn').addEventListener('click', async () => {
+                const username = document.getElementById('test-username').value;
+                const password = document.getElementById('test-password').value;
+                
+                if (!username || !password) {
+                    apiResults.innerHTML = '<p style="color: red;">Please enter both username and password</p>';
+                    return;
+                }
+                
+                apiResults.innerHTML = '<p>Testing login and GraphQL APIs...</p>';
+                const testResults = [];
+                
+                try {
+                    // Test login
+                    testResults.push('1. Testing login...');
+                    const loginResult = await login(username, password);
+                    
+                    if (loginResult.success) {
+                        testResults.push('   ✓ Login successful');
+                        
+                        // Test GraphQL queries if login successful
+                        testResults.push('2. Testing GraphQL queries...');
+                        
+                        try {
+                            const userInfo = await getUserBasicInfo();
+                            testResults.push(`   ✓ User info: ${Array.isArray(userInfo) ? userInfo.length + ' users' : 'Single user'}`);
+                        } catch (error) {
+                            testResults.push(`   ✗ User info failed: ${error.message}`);
+                        }
+                        
+                        try {
+                            const xpTransactions = await getUserXPTransactions();
+                            testResults.push(`   ✓ XP transactions: ${xpTransactions.length} records`);
+                        } catch (error) {
+                            testResults.push(`   ✗ XP transactions failed: ${error.message}`);
+                        }
+                        
+                        try {
+                            const userResults = await getUserResults();
+                            testResults.push(`   ✓ User results: ${userResults.length} records`);
+                        } catch (error) {
+                            testResults.push(`   ✗ User results failed: ${error.message}`);
+                        }
+                        
+                        try {
+                            const objectInfo = await getObjectInfo(3323);
+                            testResults.push(`   ✓ Object query: ${Array.isArray(objectInfo) ? objectInfo.length + ' objects' : 'Single object'}`);
+                        } catch (error) {
+                            testResults.push(`   ✗ Object query failed: ${error.message}`);
+                        }
+                        
+                    } else {
+                        testResults.push(`   ✗ Login failed: ${loginResult.error}`);
+                    }
+                    
+                } catch (error) {
+                    testResults.push(`   ✗ Login test failed: ${error.message}`);
+                }
+                
+                apiResults.innerHTML = '<h3>API Test Results:</h3><pre>' + testResults.join('\n') + '</pre>';
+            });
+        }
+    </script>
+</body>
+</html>
