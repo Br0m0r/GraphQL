@@ -63,7 +63,6 @@ async function login(username, password) {
 
             if (token) {
                 storeToken(token);
-                console.log(token)
                 return { success: true, token };
             } else {
                 return { success: false, error: 'No token received from server' };
