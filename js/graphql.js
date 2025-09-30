@@ -2,7 +2,7 @@
 
 // Get GraphQL API Configuration with CORS proxy support
 const getGraphQLApiUrl = () => {
-    const baseUrl = window.CONFIG?.GRAPHQL_API_URL || 'https://((DOMAIN))/api/graphql-engine/v1/graphql';
+    const baseUrl = window.CONFIG?.GRAPHQL_API_URL || 'https://platform.zone01.gr/api/graphql-engine/v1/graphql';
     if (window.CONFIG?.USE_CORS_PROXY && window.CONFIG?.CORS_PROXY) {
         return window.CONFIG.CORS_PROXY + encodeURIComponent(baseUrl);
     }
