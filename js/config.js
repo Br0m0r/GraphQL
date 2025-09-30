@@ -8,7 +8,7 @@ const CONFIG = {
     VERSION: '1.0.0',
     // CORS proxy for development/testing (not for production)
     // Set USE_CORS_PROXY to false when deploying to production with proper CORS setup
-    USE_CORS_PROXY: true,
+    USE_CORS_PROXY: false,
     CORS_PROXY: 'https://corsproxy.io/?'
 };
 
