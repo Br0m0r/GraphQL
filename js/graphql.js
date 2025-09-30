@@ -112,7 +112,7 @@ async function getUserResults() {
                 createdAt
                 updatedAt
                 path
-                user {
+                user {  
                     id
                     login
                 }
@@ -124,7 +124,8 @@ async function getUserResults() {
             }
         }
     `;
-    
+    //check if user query is correct
+
     try {
         const data = await executeGraphQLQuery(query);
         return Array.isArray(data.result) ? data.result : [];
