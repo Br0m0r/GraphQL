@@ -84,7 +84,16 @@ async function login(username, password) {
 
 // Function to logout
 function logout() {
-    removeToken();
+    // Make sure ALL of these are cleared
+    localStorage.removeItem('token');
+    localStorage.removeItem('authToken'); 
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user');
+    
+    // Clear any other auth-related data
+    localStorage.clear(); // Nuclear option if needed
+    
+    // Redirect to login
     window.location.href = 'index.html';
 }
 
