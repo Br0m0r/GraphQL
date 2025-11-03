@@ -13,21 +13,27 @@ async function loadProfileData() {
         showLoadingStates();
         
         // Load all data in parallel for better performance
-        const [userInfo, xpTransactions, userResults, userProgress] = await Promise.all([
+        const [userInfo, projectsXP, checkpointsXP, piscineJsXP, userResults, userProgress] = await Promise.all([
             getUserBasicInfo().catch(err => { console.warn('User info failed:', err); return []; }),
-            getUserXPTransactions().catch(err => { console.warn('XP transactions failed:', err); return []; }),
+            fetchUserProjectsXPData().catch(err => { console.warn('Projects XP failed:', err); return []; }),
+            fetchUserCheckpointsXPData().catch(err => { console.warn('Checkpoints XP failed:', err); return []; }),
+            fetchJSPiscineXPData().catch(err => { console.warn('JS Piscine XP failed:', err); return []; }),
             getUserResults().catch(err => { console.warn('User results failed:', err); return []; }),
             getUserProgress().catch(err => { console.warn('User progress failed:', err); return []; })
         ]);
 
+        // Calculate total XP from filtered categories
+        const xpTotals = calculateTotalXP();
+
         // Update UI with loaded data - functions handle empty/null data gracefully
         updateUserHeader(userInfo);
         updateBasicInfo(userInfo);
-        updateXPInfo(xpTransactions);
+        updateXPInfo(xpTotals, projectsXP, checkpointsXP, piscineJsXP);
         updateAuditInfo(userResults, userProgress);
         
-        // Create visualizations
-        createDataVisualizations(xpTransactions, userResults);
+        // Create visualizations using all filtered XP data combined
+        const allXPTransactions = UTILS.getAllFilteredXPTransactions();
+        createDataVisualizations(allXPTransactions, userResults);
         
     } catch (error) {
         console.error('Failed to load profile data:', error);
@@ -115,50 +121,46 @@ function updateBasicInfo(userInfo) {
 }
 
 // Update XP information section
-function updateXPInfo(xpTransactions) {
+function updateXPInfo(xpTotals, projectsXP, checkpointsXP, piscineJsXP) {
     const xpInfoElement = document.getElementById('xp-info-content');
     if (!xpInfoElement) return;
     
-    if (!xpTransactions || xpTransactions.length === 0) {
+    if (!xpTotals || xpTotals.total === 0) {
         xpInfoElement.innerHTML = '<p>No XP data available</p>';
         return;
     }
     
-    // Filter valid transactions
-    const validTransactions = xpTransactions.filter(t => t && typeof t.amount === 'number');
-    if (validTransactions.length === 0) {
-        xpInfoElement.innerHTML = '<p>No valid XP data available</p>';
-        return;
-    }
+    // Combine all XP transactions for recent activity
+    const allTransactions = [...projectsXP, ...checkpointsXP, ...piscineJsXP]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
-    const totalXP = calculateTotalXP(validTransactions);
-    const recentTransactions = validTransactions
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5);
-    
-    const avgXP = validTransactions.length > 0 ? Math.round(totalXP / validTransactions.length) : 0;
+    const recentTransactions = allTransactions.slice(0, 5);
     
     const xpInfo = [
-        { label: 'Total XP', value: formatNumber(totalXP) },
-        { label: 'Total Transactions', value: validTransactions.length },
-        { label: 'Average XP per Transaction', value: formatNumber(avgXP) }
+        { label: 'Total XP', value: formatNumber(xpTotals.total), style: 'font-weight: bold; font-size: 1.1em;' },
+        { label: 'Projects XP', value: formatNumber(xpTotals.projects) },
+        { label: 'Checkpoints XP', value: formatNumber(xpTotals.checkpoints) },
+        { label: 'JS Piscine XP', value: formatNumber(xpTotals.piscineJs) },
+        { label: 'Total Transactions', value: allTransactions.length }
     ];
     
     let html = xpInfo.map(item => `
-        <div class="data-item">
+        <div class="data-item" ${item.style ? `style="${item.style}"` : ''}>
             <span class="data-label">${item.label}:</span>
             <span class="data-value">${item.value}</span>
         </div>
     `).join('');
     
-    html += '<h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">Recent XP Gains:</h4>';
-    html += recentTransactions.map(transaction => `
-        <div class="data-item" style="font-size: 0.9em;">
-            <span class="data-label">+${formatNumber(transaction.amount)} XP</span>
-            <span class="data-value">${formatDate(transaction.createdAt)}</span>
-            ${transaction.object ? `<br><small>${transaction.object.name}</small>` : ''}
-        </div>
-    `).join('');
+    if (recentTransactions.length > 0) {
+        html += '<h4 style="margin-top: 1rem; margin-bottom: 0.5rem;">Recent XP Gains:</h4>';
+        html += recentTransactions.map(transaction => `
+            <div class="data-item" style="font-size: 0.9em;">
+                <span class="data-label">+${formatNumber(transaction.amount)} XP</span>
+                <span class="data-value">${formatDate(transaction.createdAt)}</span>
+                ${transaction.object ? `<br><small>${transaction.object.name}</small>` : ''}
+            </div>
+        `).join('');
+    }
     
     xpInfoElement.innerHTML = html;
 }
