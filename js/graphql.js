@@ -2,7 +2,7 @@
 
 // Get GraphQL API Configuration with CORS proxy support
 const getGraphQLApiUrl = () => {
-    const baseUrl = window.CONFIG?.GRAPHQL_API_URL || 'https://platform.zone01.gr/api/graphql-engine/v1/graphql';
+    const baseUrl = window.CONFIG?.GRAPHQL_API_URL ;
     if (window.CONFIG?.USE_CORS_PROXY && window.CONFIG?.CORS_PROXY) {
         return window.CONFIG.CORS_PROXY + encodeURIComponent(baseUrl);
     }
@@ -54,150 +54,230 @@ async function executeGraphQLQuery(query, variables = {}) {
 
 // Basic Query: Get user information
 async function getUserBasicInfo() {
+    let token = localStorage.getItem('jwt_token');
+    if (!token) return [];
+    token = token.replace(/^"|"$/g, ''); // Clean token
+    
     const query = `
-        query {
-            user {
-                id
-                login
-                firstName
-                lastName
-                email
-                createdAt
-                updatedAt
-            }
+    {
+        user {
+            id
+            login
+            firstName
+            lastName
+            email
+            createdAt
+            updatedAt
         }
-    `;
+    }`;
     
     try {
-        const data = await executeGraphQLQuery(query);
-        // Handle both single user and array response formats
-        return Array.isArray(data.user) ? data.user : (data.user ? [data.user] : []);
-    } catch (error) {
-        console.error('Failed to fetch user basic info:', error);
-        throw error;
+        const response = await fetch(getGraphQLApiUrl(), {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ query })
+        });
+
+        const result = await response.json();
+        if (response.ok && result.data) {
+            return Array.isArray(result.data.user) ? result.data.user : (result.data.user ? [result.data.user] : []);
+        } else {
+            console.error('GraphQL error:', result.errors);
+            return [];
+        }
+    } catch (err) {
+        console.error('Fetch user basic info error:', err);
+        return [];
     }
 }
 
 // Query with Arguments: Get specific object information
 async function getObjectInfo(objectId = 3323) {
+    let token = localStorage.getItem('jwt_token');
+    if (!token) return [];
+    token = token.replace(/^"|"$/g, ''); // Clean token
+    
     const query = `
-        query($objectId: Int!) {
-            object(where: { id: { _eq: $objectId }}) {
-                id
-                name
-                type
-                attrs
-                createdAt
-            }
+    {
+        object(where: { id: { _eq: ${objectId} }}) {
+            id
+            name
+            type
+            attrs
+            createdAt
         }
-    `;
+    }`;
     
     try {
-        const data = await executeGraphQLQuery(query, { objectId });
-        return data.object;
-    } catch (error) {
-        console.error('Failed to fetch object info:', error);
-        throw error;
+        const response = await fetch(getGraphQLApiUrl(), {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ query })
+        });
+
+        const result = await response.json();
+        if (response.ok && result.data) {
+            return result.data.object;
+        } else {
+            console.error('GraphQL error:', result.errors);
+            return [];
+        }
+    } catch (err) {
+        console.error('Fetch object info error:', err);
+        return [];
     }
 }
 
 // Nested Query: Get results with user information
 async function getUserResults() {
+    let token = localStorage.getItem('jwt_token');
+    if (!token) return [];
+    token = token.replace(/^"|"$/g, ''); // Clean token
+    
     const query = `
-        query {
-            result(order_by: { createdAt: desc }) {
+    {
+        result(order_by: { createdAt: desc }) {
+            id
+            grade
+            type
+            createdAt
+            updatedAt
+            path
+            user {
                 id
-                grade
+                login
+            }
+            object {
+                id
+                name
                 type
-                createdAt
-                updatedAt
-                path
-                user {  
-                    id
-                    login
-                }
-                object {
-                    id
-                    name
-                    type
-                }
             }
         }
-    `;
-    //check if user query is correct
-
+    }`;
+    
     try {
-        const data = await executeGraphQLQuery(query);
-        return Array.isArray(data.result) ? data.result : [];
-    } catch (error) {
-        console.error('Failed to fetch user results:', error);
-        // Return empty array instead of throwing to prevent cascade failures
+        const response = await fetch(getGraphQLApiUrl(), {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ query })
+        });
+
+        const result = await response.json();
+        if (response.ok && result.data) {
+            return Array.isArray(result.data.result) ? result.data.result : [];
+        } else {
+            console.error('GraphQL error:', result.errors);
+            return [];
+        }
+    } catch (err) {
+        console.error('Fetch user results error:', err);
         return [];
     }
 }
 
 // Get user XP transactions
 async function getUserXPTransactions() {
+    let token = localStorage.getItem('jwt_token');
+    if (!token) return [];
+    token = token.replace(/^"|"$/g, ''); // Clean token
+    
     const query = `
-        query {
-            transaction(where: { type: { _eq: "xp" }}, order_by: { createdAt: desc }) {
+    query {
+        transaction(where: { type: { _eq: "xp" }}, order_by: { createdAt: desc }) {
+            id
+            type
+            amount
+            createdAt
+            path
+            object {
                 id
+                name
                 type
-                amount
-                createdAt
-                path
-                object {
-                    id
-                    name
-                    type
-                }
-                user {
-                    id
-                    login
-                }
+            }
+            user {
+                id
+                login
             }
         }
-    `;
+    }`;
     
     try {
-        const data = await executeGraphQLQuery(query);
-        return Array.isArray(data.transaction) ? data.transaction : [];
-    } catch (error) {
-        console.error('Failed to fetch XP transactions:', error);
-        // Return empty array instead of throwing to prevent cascade failures
+        const response = await fetch(getGraphQLApiUrl(), {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ query })
+        });
+
+        const result = await response.json();
+        if (response.ok && result.data) {
+            return Array.isArray(result.data.transaction) ? result.data.transaction : [];
+        } else {
+            console.error('GraphQL error:', result.errors);
+            return [];
+        }
+    } catch (err) {
+        console.error('Fetch XP transactions error:', err);
         return [];
     }
 }
 
 // Get user progress data
 async function getUserProgress() {
+    let token = localStorage.getItem('jwt_token');
+    if (!token) return [];
+    token = token.replace(/^"|"$/g, ''); // Clean token
+    
     const query = `
-        query {
-            progress(order_by: { createdAt: desc }) {
+    {
+        progress(order_by: { createdAt: desc }) {
+            id
+            grade
+            createdAt
+            updatedAt
+            path
+            user {
                 id
-                grade
-                createdAt
-                updatedAt
-                path
-                user {
-                    id
-                    login
-                }
-                object {
-                    id
-                    name
-                    type
-                }
+                login
+            }
+            object {
+                id
+                name
+                type
             }
         }
-    `;
+    }`;
     
     try {
-        const data = await executeGraphQLQuery(query);
-        return Array.isArray(data.progress) ? data.progress : [];
-    } catch (error) {
-        console.error('Failed to fetch user progress:', error);
-        // Return empty array instead of throwing to prevent cascade failures
+        const response = await fetch(getGraphQLApiUrl(), {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ query })
+        });
+
+        const result = await response.json();
+        if (response.ok && result.data) {
+            return Array.isArray(result.data.progress) ? result.data.progress : [];
+        } else {
+            console.error('GraphQL error:', result.errors);
+            return [];
+        }
+    } catch (err) {
+        console.error('Fetch user progress error:', err);
         return [];
     }
 }
