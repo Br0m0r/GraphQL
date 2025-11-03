@@ -2,7 +2,7 @@
 
 // Get GraphQL API Configuration with CORS proxy support
 const getGraphQLApiUrl = () => {
-    const baseUrl = window.CONFIG?.GRAPHQL_API_URL ;
+    const baseUrl = window.CONFIG?.GRAPHQL_API_URL;
     if (window.CONFIG?.USE_CORS_PROXY && window.CONFIG?.CORS_PROXY) {
         return window.CONFIG.CORS_PROXY + encodeURIComponent(baseUrl);
     }
@@ -184,7 +184,7 @@ async function getUserResults() {
     }
 }
 
-// Get user XP transactions
+// Get user XP transactions (ALL XP - kept for backward compatibility)
 async function getUserXPTransactions() {
     let token = localStorage.getItem('jwt_token');
     if (!token) return [];
@@ -231,6 +231,107 @@ async function getUserXPTransactions() {
         console.error('Fetch XP transactions error:', err);
         return [];
     }
+}
+
+// Helper function to fetch XP data with custom where clause
+async function fetchXpData(whereClause, storageKey) {
+    let token = localStorage.getItem('jwt_token');
+    if (!token) return [];
+    token = token.replace(/^"|"$/g, ''); // Clean token
+
+    const query = `
+    query {
+        transaction(where: ${whereClause}, order_by: { createdAt: desc }) {
+            path
+            amount
+            createdAt
+            object {
+                name
+                type
+            }
+        }
+    }`;
+
+    try {
+        const response = await fetch(getGraphQLApiUrl(), {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ query })
+        });
+
+        const result = await response.json();
+        if (response.ok && result.data) {
+            localStorage.setItem(storageKey, JSON.stringify(result.data.transaction));
+            console.log(`${storageKey} saved:`, result.data.transaction);
+            return Array.isArray(result.data.transaction) ? result.data.transaction : [];
+        } else {
+            console.error('GraphQL error:', result.errors);
+            return [];
+        }
+    } catch (err) {
+        console.error(`Fetch ${storageKey} error:`, err);
+        return [];
+    }
+}
+
+// Fetch XP from projects only (excludes checkpoints and piscine-js)
+async function fetchUserProjectsXPData() {
+    const where = `{
+        _and: [
+            { type: { _eq: "xp" } },
+            { path: { _like: "/athens/div-01/%" } },
+            { path: { _nlike: "/athens/div-01/checkpoint%" } },
+            { path: { _nlike: "/athens/div-01/piscine-js%" } }
+        ]
+    }`;
+    return await fetchXpData(where, 'userXPData');
+}
+
+// Fetch XP from checkpoints only
+async function fetchUserCheckpointsXPData() {
+    const where = `{
+        _and: [
+            { type: { _eq: "xp" } },
+            { path: { _like: "/athens/div-01/checkpoint%" } }
+        ]
+    }`;
+    return await fetchXpData(where, 'userCheckpointsXPData');
+}
+
+// Fetch XP from JS Piscine only
+async function fetchJSPiscineXPData() {
+    const where = `{
+        _and: [
+            { type: { _eq: "xp" } },
+            { path: { _like: "/athens/div-01/piscine-js%" } }
+        ]
+    }`;
+    return await fetchXpData(where, 'jspiscineXPData');
+}
+
+// Calculate total XP from all categories
+function calculateTotalXP() {
+    const projectsXp = JSON.parse(localStorage.getItem('userXPData') || '[]');
+    const checkpointsXp = JSON.parse(localStorage.getItem('userCheckpointsXPData') || '[]');
+    const piscineJsXp = JSON.parse(localStorage.getItem('jspiscineXPData') || '[]');
+
+    const sumXp = (data) => data.reduce((sum, x) => sum + (x.amount || 0), 0);
+
+    const totals = {
+        projects: sumXp(projectsXp),
+        checkpoints: sumXp(checkpointsXp),
+        piscineJs: sumXp(piscineJsXp),
+    };
+
+    totals.total = totals.projects + totals.checkpoints + totals.piscineJs;
+
+    console.table(totals);
+    localStorage.setItem('totalXPStats', JSON.stringify(totals));
+
+    return totals;
 }
 
 // Get user progress data
