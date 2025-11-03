@@ -26,10 +26,14 @@ const UTILS = {
         return new Intl.NumberFormat().format(num);
     },
 
-    calculateTotalXP: function(transactions) {
-        return transactions.reduce((total, transaction) => {
-            return total + (transaction.amount || 0);
-        }, 0);
+    // Combine all filtered XP data into a single array
+    getAllFilteredXPTransactions: function() {
+        const projectsXp = JSON.parse(localStorage.getItem('userXPData') || '[]');
+        const checkpointsXp = JSON.parse(localStorage.getItem('userCheckpointsXPData') || '[]');
+        const piscineJsXp = JSON.parse(localStorage.getItem('jspiscineXPData') || '[]');
+        
+        return [...projectsXp, ...checkpointsXp, ...piscineJsXp]
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     },
 
     calculatePassFailRatio: function(results) {
@@ -72,6 +76,5 @@ window.UTILS = UTILS;
 // For backward compatibility, also make individual functions available globally
 window.formatDate = UTILS.formatDate;
 window.formatNumber = UTILS.formatNumber;
-window.calculateTotalXP = UTILS.calculateTotalXP;
 window.calculatePassFailRatio = UTILS.calculatePassFailRatio;
 window.groupTransactionsByDate = UTILS.groupTransactionsByDate;
