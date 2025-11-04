@@ -140,7 +140,7 @@ function updateXPInfo(xpTotals, projectsXP, checkpointsXP, piscineJsXP) {
         { label: 'Total XP', value: formatNumber(xpTotals.total), style: 'font-weight: bold; font-size: 1.1em;' },
         { label: 'Projects XP', value: formatNumber(xpTotals.projects) },
         { label: 'Checkpoints XP', value: formatNumber(xpTotals.checkpoints) },
-        { label: 'JS Piscine XP', value: formatNumber(xpTotals.piscineJs) },
+        { label: 'JS Piscine & Bonus XP', value: formatNumber(xpTotals.piscineJs) },
         { label: 'Total Transactions', value: allTransactions.length }
     ];
     
