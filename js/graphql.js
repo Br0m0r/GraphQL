@@ -177,7 +177,7 @@ async function fetchJSPiscineXPData() {
         }
         ]
     }`;
-    await fetchXpData(where, 'jspiscineXPData');
+    return await fetchXpData(where, 'jspiscineXPData');
 }
 
 // Calculate total XP from all categories
