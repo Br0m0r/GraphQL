@@ -179,17 +179,17 @@ async function fetchJSPiscineXPData() {
 function calculateTotalXP() {
     const projectsXp = JSON.parse(localStorage.getItem('userXPData') || '[]');
     const checkpointsXp = JSON.parse(localStorage.getItem('userCheckpointsXPData') || '[]');
-    const piscineJsXp = JSON.parse(localStorage.getItem('jspiscineXPData') || '[]');
+    //const piscineJsXp = JSON.parse(localStorage.getItem('jspiscineXPData') || '[]');
 
     const sumXp = (data) => data.reduce((sum, x) => sum + (x.amount || 0), 0);
 
     const totals = {
         projects: sumXp(projectsXp),
         checkpoints: sumXp(checkpointsXp),
-        piscineJs: sumXp(piscineJsXp),
+       // piscineJs: sumXp(piscineJsXp),
     };
 
-    totals.total = totals.projects + totals.checkpoints + totals.piscineJs;
+    totals.total = totals.projects + totals.checkpoints //+ totals.piscineJs;
 
     console.table(totals);
     localStorage.setItem('totalXPStats', JSON.stringify(totals));
