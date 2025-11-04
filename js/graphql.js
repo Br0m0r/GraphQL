@@ -169,11 +169,15 @@ async function fetchJSPiscineXPData() {
     const where = `{
         _and: [
             { type: { _eq: "xp" } },
-            { path: { _like: "/athens/div-01/piscine-js" } },
+            {
+          _or: [
             { path: { _like: "/athens/div-01" } }
+            { path: { _like: "/athens/div-01/piscine-js" } }
+          ]
+        }
         ]
     }`;
-    return await fetchXpData(where, 'jspiscineXPData');
+    await fetchXpData(where, 'jspiscineXPData');
 }
 
 // Calculate total XP from all categories
